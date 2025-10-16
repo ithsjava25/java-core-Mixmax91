@@ -2,7 +2,7 @@ package com.example;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 public class Warehouse {
     private final List<Product> products = new ArrayList<>();
@@ -10,15 +10,7 @@ public class Warehouse {
     String name;
 
     public Warehouse(String name){
-        if (name == null) {
-            throw new IllegalArgumentException("Name can't be null");
-        }
-        if (name.isBlank()) {
-            throw new IllegalArgumentException("Name can't be blank");
-        }
-        cacheAndAdd(name.trim());
-        this.name = name;
-
+        this.name = name.trim();
     }
 
     private static Warehouse cacheAndAdd(String name) {
@@ -33,7 +25,7 @@ public class Warehouse {
     }
     public void addProduct(Product product) {
         if (product == null) {
-            throw new IllegalArgumentException("Product cannot be null");
+            throw new IllegalArgumentException("Product cannot be null.");
         }
         products.add(product);
     }
@@ -49,7 +41,7 @@ public class Warehouse {
     }
 
     public void updateProductPrice(UUID id, BigDecimal price) {
-        Product product = getProductById(id).orElseThrow(() -> new IllegalArgumentException("Product not found with id:" + id));
+        Product product = getProductById(id).orElseThrow(() -> new NoSuchElementException("Product not found with id:" + id));
         product.price(price);
     }
 
@@ -70,7 +62,11 @@ public class Warehouse {
     }
 
     public List<Perishable> expiredProducts() {
-        return Collections.emptyList();
+        return products.stream()
+                .filter(product -> product instanceof Perishable)
+                .map(product -> (Perishable) product)
+                .filter(Perishable::isExpired)
+                .toList();
     }
 
     public List<Shippable> shippableProducts() {
