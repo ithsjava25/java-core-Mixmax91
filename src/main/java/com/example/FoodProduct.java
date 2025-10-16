@@ -40,7 +40,7 @@ public class FoodProduct extends Product implements Perishable, Shippable {
 
     @Override
     public BigDecimal calculateShippingCost() {
-        BigDecimal base = new BigDecimal(50);;
+        BigDecimal base = new BigDecimal(50);
         return weight.multiply(base);
     }
 

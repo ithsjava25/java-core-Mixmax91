@@ -3,7 +3,7 @@ package com.example;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-abstract class Product {
+public abstract class Product {
     private final UUID id;
     private final String name;
     private final Category category;
