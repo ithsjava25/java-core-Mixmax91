@@ -8,11 +8,11 @@ import java.util.stream.Collectors;
 public class Warehouse {
     private final List<Product> products = new ArrayList<>();
     private static final Map<String, Warehouse> CACHEMAP = new HashMap<>();
-    private static final List<UUID> UUIDLIST = new ArrayList<>();
-    private static String name;
+    private final Set<UUID> uuids = new HashSet<>();
+    private final String name;
 
     private Warehouse(String name){
-
+        this.name = name;
     }
 
     private static Warehouse cacheAndAdd(String name) {
@@ -33,10 +33,10 @@ public class Warehouse {
         if (product == null) {
             throw new IllegalArgumentException("Product cannot be null.");
         }
-        if (UUIDLIST.contains(product.uuid())) {
+        if (uuids.contains(product.uuid())) {
             throw new IllegalArgumentException("Product with that id already exists, use updateProduct for updates.");
         } else {
-            UUIDLIST.add(product.uuid());
+            uuids.add(product.uuid());
         }
         products.add(product);
     }
@@ -69,6 +69,7 @@ public class Warehouse {
     }
 
     public Map<Category, List<Product>> getProductsGroupedByCategories() {
+
         return getProducts().stream().collect(Collectors.groupingBy(Product::category));
     }
 
