@@ -74,6 +74,7 @@ public class Warehouse {
 
     public void remove(UUID uuid) {
         products.removeIf(product -> product.uuid().equals(uuid));
+        uuids.remove(uuid);
     }
 
     public Map<Category, List<Product>> getProductsGroupedByCategories() {

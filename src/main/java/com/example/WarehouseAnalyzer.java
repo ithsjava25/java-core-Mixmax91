@@ -113,23 +113,28 @@ class WarehouseAnalyzer {
         for (Map.Entry<Category, List<Product>> e : byCat.entrySet()) {
             Category cat = e.getKey();
             List<Product> items = e.getValue();
+
             BigDecimal weightedSum = BigDecimal.ZERO;
-            double weightSum = 0.0;
+            BigDecimal totalWeight = BigDecimal.ZERO;
+
+
             for (Product p : items) {
                 if (p instanceof Shippable s && s.weight() > 0.0) {
-                    double w = Optional.ofNullable(s.weight()).orElse(0.0);
-                    if (w > 0) {
+                    double w = s.weight();
+                    if (w > 0 && Double.isFinite(w)) {
                         BigDecimal wBD = BigDecimal.valueOf(w);
                         weightedSum = weightedSum.add(p.price().multiply(wBD));
-                        weightSum += w;
+                        totalWeight = totalWeight.add(wBD);
                     }
                 }
             }
             BigDecimal avg;
-            if (weightSum > 0) {
-                avg = weightedSum.divide(BigDecimal.valueOf(weightSum), 2, RoundingMode.HALF_UP);
+            if (totalWeight.compareTo(BigDecimal.ZERO) > 0) {
+                avg = weightedSum.divide(totalWeight, 2, RoundingMode.HALF_UP);
             } else {
-                BigDecimal sum = items.stream().map(Product::price).reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal sum = items.stream().
+                        map(Product::price)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
                 avg = sum.divide(BigDecimal.valueOf(items.size()), 2, RoundingMode.HALF_UP);
             }
             result.put(cat, avg);
