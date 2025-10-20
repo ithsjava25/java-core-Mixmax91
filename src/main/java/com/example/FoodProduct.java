@@ -4,10 +4,23 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+/**
+ * Implements Perishable and Shippable.
+ * Fields: LocalDate expirationDate, BigDecimal weight (kg).
+ * Price and weight cannot be negative.
+ * Contains productDetails().
+ * Shipping cost = weight * 50.
+ */
+
 public class FoodProduct extends Product implements Perishable, Shippable {
 
     private final LocalDate expirationDate;
     private final BigDecimal weight;
+
+    /**
+     *
+     * @throws IllegalArgumentException if weight or price is negative
+     */
     public FoodProduct(UUID id, String name, Category category,
                        BigDecimal price, LocalDate expirationDate, BigDecimal weight) {
         super(id, name, category, price);
@@ -24,7 +37,6 @@ public class FoodProduct extends Product implements Perishable, Shippable {
 
     @Override
     String productDetails() {
-
         return "Food: " + name() + ", Expires: " + expirationDate;
     }
 
@@ -38,6 +50,10 @@ public class FoodProduct extends Product implements Perishable, Shippable {
         return Perishable.super.isExpired();
     }
 
+    /**
+     * Shipping cost = 50 * weight (kg)
+     * @return BigDecimal
+     */
     @Override
     public BigDecimal calculateShippingCost() {
         BigDecimal base = new BigDecimal(50);
