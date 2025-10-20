@@ -116,7 +116,7 @@ class WarehouseAnalyzer {
             BigDecimal weightedSum = BigDecimal.ZERO;
             double weightSum = 0.0;
             for (Product p : items) {
-                if (p instanceof Shippable s) {
+                if (p instanceof Shippable s && s.weight() > 0.0) {
                     double w = Optional.ofNullable(s.weight()).orElse(0.0);
                     if (w > 0) {
                         BigDecimal wBD = BigDecimal.valueOf(w);

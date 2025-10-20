@@ -2,14 +2,16 @@ package com.example;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
 public class Warehouse {
     private final List<Product> products = new ArrayList<>();
-    private static final Map<String, Warehouse> CACHEMAP = new HashMap<>();
+    private static final Map<String, Warehouse> CACHEMAP = new ConcurrentHashMap<>();
     private final Set<UUID> uuids;
     private final String name;
+    public static int counter = 1;
 
     private Warehouse(String name){
         this.name = name;
@@ -27,10 +29,10 @@ public class Warehouse {
             Random rand = new Random();
             int defaultInt = rand.nextInt(10000);
             String name = String.valueOf(defaultInt);
-            if(!CACHEMAP.containsKey(name)){
-                return cacheAndAdd("Warehouse" + name);
+            if(!CACHEMAP.containsKey("Warehouse" + name + counter)){
+                return cacheAndAdd("Warehouse" + name + counter++);
             }
-            return cacheAndAdd("Default Name");
+            return cacheAndAdd("Default Name" + counter++);
 
     }
 
@@ -67,6 +69,7 @@ public class Warehouse {
 
     public void clearProducts() {
         products.clear();
+        uuids.clear();
     }
 
     public boolean isEmpty() {
