@@ -8,11 +8,12 @@ import java.util.stream.Collectors;
 public class Warehouse {
     private final List<Product> products = new ArrayList<>();
     private static final Map<String, Warehouse> CACHEMAP = new HashMap<>();
-    private final Set<UUID> uuids = new HashSet<>();
+    private final Set<UUID> uuids;
     private final String name;
 
     private Warehouse(String name){
         this.name = name;
+        uuids = new HashSet<>();
     }
 
     private static Warehouse cacheAndAdd(String name) {
@@ -23,8 +24,16 @@ public class Warehouse {
     }
 
     public static Warehouse getInstance(){
-        return cacheAndAdd(name);
+            Random rand = new Random();
+            int defaultInt = rand.nextInt(10000);
+            String name = String.valueOf(defaultInt);
+            if(!CACHEMAP.containsKey(name)){
+                return cacheAndAdd("Warehouse" + name);
+            }
+            return cacheAndAdd("Default Name");
+
     }
+
     public static Warehouse getInstance(String name){
         return cacheAndAdd(name);
     }
