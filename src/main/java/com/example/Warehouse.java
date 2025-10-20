@@ -7,11 +7,10 @@ import java.util.stream.Collectors;
 
 
 public class Warehouse {
-    private final List<Product> products = new ArrayList<>();
+    private final Set<Product> products = new HashSet<>();
     private static final Map<String, Warehouse> CACHEMAP = new ConcurrentHashMap<>();
     private final Set<UUID> uuids;
     private final String name;
-    public static int counter = 1;
 
     private Warehouse(String name){
         this.name = name;
@@ -26,14 +25,7 @@ public class Warehouse {
     }
 
     public static Warehouse getInstance(){
-            Random rand = new Random();
-            int defaultInt = rand.nextInt(10000);
-            String name = String.valueOf(defaultInt);
-            if(!CACHEMAP.containsKey("Warehouse" + name + counter)){
-                return cacheAndAdd("Warehouse" + name + counter++);
-            }
-            return cacheAndAdd("Default Name" + counter++);
-
+        return cacheAndAdd("Default");
     }
 
     public static Warehouse getInstance(String name){
@@ -53,17 +45,21 @@ public class Warehouse {
     }
 
     public List<Product> getProducts() {
-        return Collections.unmodifiableList(products);
+        return Collections.unmodifiableList(new ArrayList<>(products));
     }
 
     public Optional<Product> getProductById(UUID id) {
         return products.stream()
                 .filter(product -> product.uuid().equals(id))
                 .findFirst();
+
     }
 
     public void updateProductPrice(UUID id, BigDecimal price) {
-        Product product = getProductById(id).orElseThrow(() -> new NoSuchElementException("Product not found with id:" + id));
+        Product product = products.stream()
+                .filter(p -> p.uuid().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("Product not found with id:" + id));
         product.price(price);
     }
 
