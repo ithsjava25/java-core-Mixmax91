@@ -2,15 +2,17 @@ package com.example;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class Warehouse {
     private final List<Product> products = new ArrayList<>();
     private static final Map<String, Warehouse> CACHEMAP = new HashMap<>();
-    String name;
+    private static final List<UUID> UUIDLIST = new ArrayList<>();
+    private static String name;
 
-    public Warehouse(String name){
-        this.name = name.trim();
+    private Warehouse(String name){
+
     }
 
     private static Warehouse cacheAndAdd(String name) {
@@ -20,12 +22,21 @@ public class Warehouse {
         return CACHEMAP.get(name);
     }
 
-    public static Warehouse getInstance(String name){
-        return cacheAndAdd(name.trim());
+    public static Warehouse getInstance(){
+        return cacheAndAdd(name);
     }
+    public static Warehouse getInstance(String name){
+        return cacheAndAdd(name);
+    }
+
     public void addProduct(Product product) {
         if (product == null) {
             throw new IllegalArgumentException("Product cannot be null.");
+        }
+        if (UUIDLIST.contains(product.uuid())) {
+            throw new IllegalArgumentException("Product with that id already exists, use updateProduct for updates.");
+        } else {
+            UUIDLIST.add(product.uuid());
         }
         products.add(product);
     }
@@ -57,8 +68,8 @@ public class Warehouse {
         products.removeIf(product -> product.uuid().equals(uuid));
     }
 
-    public Optional<Object> getProductsGroupedByCategories() {
-        return Optional.empty();
+    public Map<Category, List<Product>> getProductsGroupedByCategories() {
+        return getProducts().stream().collect(Collectors.groupingBy(Product::category));
     }
 
     public List<Perishable> expiredProducts() {
