@@ -31,7 +31,7 @@ class WarehouseAnalyzer {
         List<Product> result = new ArrayList<>();
         for (Product p : warehouse.getProducts()) {
             BigDecimal price = p.price();
-            if (price.compareTo(minPrice) >= 0 && price.compareTo(maxPrice) <= 0) {
+            if (price != null && price.compareTo(minPrice) >= 0 && price.compareTo(maxPrice) <= 0) {
                 result.add(p);
             }
         }
@@ -113,23 +113,28 @@ class WarehouseAnalyzer {
         for (Map.Entry<Category, List<Product>> e : byCat.entrySet()) {
             Category cat = e.getKey();
             List<Product> items = e.getValue();
+
             BigDecimal weightedSum = BigDecimal.ZERO;
-            double weightSum = 0.0;
+            BigDecimal totalWeight = BigDecimal.ZERO;
+
+
             for (Product p : items) {
-                if (p instanceof Shippable s) {
-                    double w = Optional.ofNullable(s.weight()).orElse(0.0);
-                    if (w > 0) {
+                if (p instanceof Shippable s && s.weight() > 0.0) {
+                    double w = s.weight();
+                    if (w > 0 && Double.isFinite(w)) {
                         BigDecimal wBD = BigDecimal.valueOf(w);
                         weightedSum = weightedSum.add(p.price().multiply(wBD));
-                        weightSum += w;
+                        totalWeight = totalWeight.add(wBD);
                     }
                 }
             }
             BigDecimal avg;
-            if (weightSum > 0) {
-                avg = weightedSum.divide(BigDecimal.valueOf(weightSum), 2, RoundingMode.HALF_UP);
+            if (totalWeight.compareTo(BigDecimal.ZERO) > 0) {
+                avg = weightedSum.divide(totalWeight, 2, RoundingMode.HALF_UP);
             } else {
-                BigDecimal sum = items.stream().map(Product::price).reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal sum = items.stream().
+                        map(Product::price)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
                 avg = sum.divide(BigDecimal.valueOf(items.size()), 2, RoundingMode.HALF_UP);
             }
             result.put(cat, avg);
@@ -149,17 +154,29 @@ class WarehouseAnalyzer {
         List<Product> products = warehouse.getProducts();
         int n = products.size();
         if (n == 0) return List.of();
-        double sum = products.stream().map(Product::price).mapToDouble(bd -> bd.doubleValue()).sum();
-        double mean = sum / n;
-        double variance = products.stream()
-                .map(Product::price)
-                .mapToDouble(bd -> Math.pow(bd.doubleValue() - mean, 2))
-                .sum() / n;
-        double std = Math.sqrt(variance);
-        double threshold = standardDeviations * std;
+
+        //Make a sorted list to get median instead of mean
+        List<Double> sortedPrices = products.stream()
+                .map(product -> product.price().doubleValue())
+                .sorted()
+                .toList();
+        double median = sortedPrices.get(n / 2);
+
+        //Get the MAD deviation
+        List<Double> medianAbsoluteDeviation = products.stream()
+                .map(p -> Math.abs(p.price().doubleValue() - median))
+                .sorted()
+                .toList();
+        double mad = medianAbsoluteDeviation.get(n / 2);
+
+//        To scale the Mean Absolute Deviation (MAD) to approximate the standard deviation (SD),
+//         multiply the MAD by 1.25 or 5/4,
+//         an approximation that is most accurate for data that is normally distributed.
+         double scaleMad = mad * (5.0/4.0);
+         double threshold = standardDeviations * scaleMad;
         List<Product> outliers = new ArrayList<>();
         for (Product p : products) {
-            double diff = Math.abs(p.price().doubleValue() - mean);
+            double diff = Math.abs(p.price().doubleValue() - median);
             if (diff > threshold) outliers.add(p);
         }
         return outliers;
@@ -176,7 +193,7 @@ class WarehouseAnalyzer {
      */
     public List<ShippingGroup> optimizeShippingGroups(BigDecimal maxWeightPerGroup) {
         double maxW = maxWeightPerGroup.doubleValue();
-        List<Shippable> items = warehouse.shippableProducts();
+        List<Shippable> items = new ArrayList<>(warehouse.shippableProducts());
         // Sort by descending weight (First-Fit Decreasing)
         items.sort((a, b) -> Double.compare(Objects.requireNonNullElse(b.weight(), 0.0), Objects.requireNonNullElse(a.weight(), 0.0)));
         List<List<Shippable>> bins = new ArrayList<>();
@@ -221,12 +238,11 @@ class WarehouseAnalyzer {
             BigDecimal discounted = p.price();
             if (p instanceof Perishable per) {
                 LocalDate exp = per.expirationDate();
-                long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(today, exp);
-                if (daysBetween == 0) {
+                if (today.isEqual(exp)) {
                     discounted = p.price().multiply(new BigDecimal("0.50"));
-                } else if (daysBetween == 1) {
+                } else if (today.plusDays(1).isEqual(exp)) {
                     discounted = p.price().multiply(new BigDecimal("0.70"));
-                } else if (daysBetween > 1 && daysBetween <= 3) {
+                } else if (today.plusDays(2).isEqual(exp) || today.plusDays(3).isEqual(exp)) {
                     discounted = p.price().multiply(new BigDecimal("0.85"));
                 } else {
                     discounted = p.price();
