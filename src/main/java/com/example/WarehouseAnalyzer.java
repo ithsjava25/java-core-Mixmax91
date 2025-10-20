@@ -31,7 +31,7 @@ class WarehouseAnalyzer {
         List<Product> result = new ArrayList<>();
         for (Product p : warehouse.getProducts()) {
             BigDecimal price = p.price();
-            if (price.compareTo(minPrice) >= 0 && price.compareTo(maxPrice) <= 0) {
+            if (price != null && price.compareTo(minPrice) >= 0 && price.compareTo(maxPrice) <= 0) {
                 result.add(p);
             }
         }
@@ -233,12 +233,11 @@ class WarehouseAnalyzer {
             BigDecimal discounted = p.price();
             if (p instanceof Perishable per) {
                 LocalDate exp = per.expirationDate();
-                long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(today, exp);
-                if (daysBetween == 0) {
+                if (today.isEqual(exp)) {
                     discounted = p.price().multiply(new BigDecimal("0.50"));
-                } else if (daysBetween == 1) {
+                } else if (today.plusDays(1).isEqual(exp)) {
                     discounted = p.price().multiply(new BigDecimal("0.70"));
-                } else if (daysBetween > 1 && daysBetween <= 3) {
+                } else if (today.plusDays(2).isEqual(exp) || today.plusDays(3).isEqual(exp)) {
                     discounted = p.price().multiply(new BigDecimal("0.85"));
                 } else {
                     discounted = p.price();
